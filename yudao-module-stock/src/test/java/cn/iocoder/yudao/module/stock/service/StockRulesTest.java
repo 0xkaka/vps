@@ -169,7 +169,10 @@ class StockRulesTest {
         assertTrue(
                 new StockChangeService(products, logs, jdbc, cache)
                         .apply(p, new SourceParser.Snapshot("x", "IN_STOCK", LocalDateTime.now())));
-        verifyNoInteractions(jdbc);
+        assertFalse(
+                mockingDetails(jdbc).getInvocations().stream()
+                        .anyMatch(
+                                i -> i.getArguments()[0].toString().contains("INSERT INTO vps_")));
         verify(logs).insert(any());
     }
 
@@ -186,5 +189,37 @@ class StockRulesTest {
                 new StockChangeService(products, logs, jdbc, cache)
                         .apply(p, new SourceParser.Snapshot("x", "IN_STOCK", LocalDateTime.now())));
         verifyNoInteractions(logs, jdbc, cache);
+    }
+
+    @Test
+    void switchingSourcesDoesNotInventRestockEvent() {
+        ProductMapper products = mock(ProductMapper.class);
+        CheckLogMapper logs = mock(CheckLogMapper.class);
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        CatalogCache cache = mock(CatalogCache.class);
+        when(products.updateStock(anyLong(), anyString(), anyString(), any())).thenReturn(1);
+        Product p = new Product();
+        p.setId(1L);
+        p.setName("test");
+        p.setStockStatus("OUT_OF_STOCK");
+        p.setEnabled(true);
+        p.setGroupFlag(false);
+        assertTrue(
+                new StockChangeService(products, logs, jdbc, cache)
+                        .apply(
+                                p,
+                                new SourceParser.Snapshot("x", "IN_STOCK", LocalDateTime.now()),
+                                "OFFICIAL_API",
+                                "https://bandwagonhost.com/order/catalog.json",
+                                null,
+                                false));
+        verify(jdbc)
+                .update(
+                        "DELETE FROM vps_region WHERE product_id=? AND source_name IS NOT NULL",
+                        p.getId());
+        assertFalse(
+                mockingDetails(jdbc).getInvocations().stream()
+                        .anyMatch(
+                                i -> i.getArguments()[0].toString().contains("INSERT INTO vps_")));
     }
 }

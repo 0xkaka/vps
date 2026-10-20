@@ -15,6 +15,10 @@ CREATE TABLE vps_vendor (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Vendor管理';
 
 CREATE TABLE vps_product (
+  last_source_type varchar(32) DEFAULT NULL COMMENT '实际库存来源类型',
+  last_source_url varchar(2000) DEFAULT NULL COMMENT '实际库存来源地址',
+  last_sync_error varchar(1000) DEFAULT NULL COMMENT '同步异常',
+  last_attempt_at datetime DEFAULT NULL COMMENT '最近尝试时间',
   source_page varchar(255) NOT NULL DEFAULT 'https://stock.vpszdm.com/' COMMENT '库存来源页面',
   id bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `name` varchar(255) NOT NULL COMMENT '产品名称',

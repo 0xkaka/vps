@@ -24,7 +24,7 @@ spring:
       datasource:
         master:
           name: vps_stock
-          url: jdbc:mysql://127.0.0.1:3306/vps_stock?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+          url: jdbc:mysql://127.0.0.1:3306/vps_stock?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&sessionVariables=time_zone=%27%2B08:00%27&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
           username: vps_app
           password: ${VPS_DB_PASSWORD}
   data:

@@ -10,7 +10,8 @@ import java.util.List;
 @Mapper
 public interface ProductMapper {
     @Select(
-            "<script>SELECT id, source_page, source_key, last_synced_at, `name`, `vendor_id`,"
+            "<script>SELECT id, last_source_type, last_source_url, last_sync_error,"
+                + " last_attempt_at, source_page, source_key, last_synced_at, `name`, `vendor_id`,"
                 + " `parent_id`, `group_flag`, `specification`, `route_tags`, `description`,"
                 + " `purchase_url`, `source_url`, `speed_url`, `looking_glass_url`, `review_url`,"
                 + " `stock_status`, `interval_seconds`, `last_checked_at`, `monitor_enabled`,"
@@ -20,7 +21,8 @@ public interface ProductMapper {
     List<Product> selectList(@Param("name") String name);
 
     @Select(
-            "SELECT id, source_page, source_key, last_synced_at, `name`, `vendor_id`, `parent_id`,"
+            "SELECT id, last_source_type, last_source_url, last_sync_error, last_attempt_at,"
+                + " source_page, source_key, last_synced_at, `name`, `vendor_id`, `parent_id`,"
                 + " `group_flag`, `specification`, `route_tags`, `description`, `purchase_url`,"
                 + " `source_url`, `speed_url`, `looking_glass_url`, `review_url`, `stock_status`,"
                 + " `interval_seconds`, `last_checked_at`, `monitor_enabled`, `sort_order`,"

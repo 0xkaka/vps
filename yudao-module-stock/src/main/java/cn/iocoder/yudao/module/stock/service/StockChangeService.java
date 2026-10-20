@@ -25,6 +25,17 @@ public class StockChangeService {
 
     @Transactional(rollbackFor = Exception.class)
     public boolean apply(Product product, SourceParser.Snapshot snapshot) {
+        return apply(product, snapshot, "THIRD_PARTY_PAGE", product.getSourcePage(), null, true);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public boolean apply(
+            Product product,
+            SourceParser.Snapshot snapshot,
+            String type,
+            String url,
+            String error,
+            boolean notify) {
         if (products.updateStock(
                         product.getId(),
                         product.getStockStatus(),
@@ -32,6 +43,22 @@ public class StockChangeService {
                         snapshot.checked())
                 == 0) {
             return false;
+        }
+        jdbc.update(
+                "UPDATE vps_product SET"
+                    + " last_source_type=?,last_source_url=?,last_sync_error=?,last_attempt_at=NOW()"
+                    + " WHERE id=?",
+                type,
+                url,
+                error,
+                product.getId());
+        if (type.startsWith("OFFICIAL")
+                || !java.util.Objects.equals(type, product.getLastSourceType())
+                || !java.util.Objects.equals(url, product.getLastSourceUrl())) {
+            // 替换采集生成的机房数据，避免不同来源机房状态混用。保留手工机房。
+            jdbc.update(
+                    "DELETE FROM vps_region WHERE product_id=? AND source_name IS NOT NULL",
+                    product.getId());
         }
         int sort = 0;
         for (SourceParser.RegionState region : snapshot.regions()) {
@@ -52,9 +79,10 @@ public class StockChangeService {
         log.setProductId(product.getId());
         log.setPreviousStatus(product.getStockStatus());
         log.setStockStatus(snapshot.status());
-        log.setMessage("同步原站公开页面成功");
+        log.setMessage("同步成功 [" + type + "] " + url + (error == null ? "" : "；官方来源异常：" + error));
         logs.insert(log);
-        if ("OUT_OF_STOCK".equals(product.getStockStatus())
+        if (notify
+                && "OUT_OF_STOCK".equals(product.getStockStatus())
                 && "IN_STOCK".equals(snapshot.status())
                 && !Boolean.TRUE.equals(product.getGroupFlag())
                 && Boolean.TRUE.equals(product.getEnabled())) {
@@ -73,5 +101,13 @@ public class StockChangeService {
         }
         cache.invalidateAfterCommit();
         return true;
+    }
+
+    public void failed(Product product, String error) {
+        jdbc.update(
+                "UPDATE vps_product SET last_sync_error=?,last_attempt_at=NOW() WHERE id=?",
+                error,
+                product.getId());
+        cache.invalidateAfterCommit();
     }
 }

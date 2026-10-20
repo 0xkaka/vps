@@ -10,6 +10,47 @@ import jakarta.validation.constraints.*;
 public class Product {
     private Long id;
 
+    /** 实际同步来源及异常，只由同步任务更新。 */
+    private String lastSourceType;
+
+    public String getLastSourceType() {
+        return lastSourceType;
+    }
+
+    public void setLastSourceType(String value) {
+        lastSourceType = value;
+    }
+
+    private String lastSourceUrl;
+
+    public String getLastSourceUrl() {
+        return lastSourceUrl;
+    }
+
+    public void setLastSourceUrl(String value) {
+        lastSourceUrl = value;
+    }
+
+    private String lastSyncError;
+
+    public String getLastSyncError() {
+        return lastSyncError;
+    }
+
+    public void setLastSyncError(String value) {
+        lastSyncError = value;
+    }
+
+    private java.time.LocalDateTime lastAttemptAt;
+
+    public java.time.LocalDateTime getLastAttemptAt() {
+        return lastAttemptAt;
+    }
+
+    public void setLastAttemptAt(java.time.LocalDateTime value) {
+        lastAttemptAt = value;
+    }
+
     /** 固定白名单内的库存来源页面。 */
     @Size(max = 255)
     private String sourcePage = "https://stock.vpszdm.com/";

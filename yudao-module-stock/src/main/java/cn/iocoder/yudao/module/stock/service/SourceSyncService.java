@@ -25,18 +25,21 @@ public class SourceSyncService {
     private final CheckLogMapper logs;
     private final SourceParser parser;
     private final StockChangeService changes;
+    private final MerchantSourceService merchants;
 
     public SourceSyncService(
             StringRedisTemplate redis,
             ProductMapper products,
             CheckLogMapper logs,
             SourceParser parser,
-            StockChangeService changes) {
+            StockChangeService changes,
+            MerchantSourceService merchants) {
         this.redis = redis;
         this.products = products;
         this.logs = logs;
         this.parser = parser;
         this.changes = changes;
+        this.merchants = merchants;
     }
 
     @Scheduled(fixedDelay = 120000, initialDelay = 90000)
@@ -79,9 +82,17 @@ public class SourceSyncService {
             if (due.isEmpty()) {
                 return 0;
             }
-            // 仅抓取固定白名单页面；单个来源失败不阻断其他来源。
+            Map<Long, MerchantSourceService.Result> official = merchants.read(due);
+            List<Product> fallback =
+                    due.stream()
+                            .filter(
+                                    p ->
+                                            official.get(p.getId()) == null
+                                                    || official.get(p.getId()).snapshot() == null)
+                            .toList();
+            // 官方来源缺失或访问失败才查询备用聚合来源，来源标签不会伪装为官方。
             Map<String, Map<String, SourceParser.Snapshot>> byPage = new LinkedHashMap<>();
-            for (String page : due.stream().map(Product::getSourcePage).distinct().toList()) {
+            for (String page : fallback.stream().map(Product::getSourcePage).distinct().toList()) {
                 if (!SourceParser.PAGES.contains(page)) {
                     continue;
                 }
@@ -104,30 +115,39 @@ public class SourceSyncService {
                     LOG.warn("来源同步失败 {}: {}", page, e.getClass().getSimpleName());
                 }
             }
-            if (byPage.isEmpty()) {
-                throw new IllegalStateException("全部来源不可用");
-            }
             int count = 0;
             for (Product p : due) {
-                Map<String, SourceParser.Snapshot> states = byPage.get(p.getSourcePage());
-                if (states == null) {
-                    continue;
-                }
-                SourceParser.Snapshot state = states.get(p.getSourceKey());
+                var direct = official.get(p.getId());
+                SourceParser.Snapshot state = direct == null ? null : direct.snapshot();
+                String type = "THIRD_PARTY_PAGE";
+                String url = p.getSourcePage();
+                String error = direct == null ? null : direct.error();
                 if (state != null) {
-                    if (changes.apply(p, state)) {
-                        count++;
-                    }
+                    type = direct.kind();
+                    url = direct.url();
                 } else {
+                    Map<String, SourceParser.Snapshot> states = byPage.get(p.getSourcePage());
+                    if (states != null) state = states.get(p.getSourceKey());
+                }
+                if (state != null) {
+                    // 切换来源建立新基线，不将来源口径差异误报为补货。
+                    boolean notify =
+                            type.equals(p.getLastSourceType())
+                                    && Objects.equals(url, p.getLastSourceUrl());
+                    if (changes.apply(p, state, type, url, error, notify)) count++;
+                } else {
+                    String message = (error == null ? "" : error + "；") + "备用来源不可用或未匹配，保留上次库存";
+                    changes.failed(p, message);
                     CheckLog log = new CheckLog();
                     log.setName(p.getName());
                     log.setProductId(p.getId());
                     log.setPreviousStatus(p.getStockStatus());
                     log.setStockStatus(p.getStockStatus());
-                    log.setMessage("原站未匹配该产品，保留库存；请核对匹配键或关闭同步");
+                    log.setMessage(message);
                     logs.insert(log);
                 }
             }
+            if (count == 0) throw new IllegalStateException("本轮无有效库存更新");
             redis.opsForValue().set("vps:source:lastSuccess", now.toString());
             redis.opsForValue().increment("vps:source:checks", count);
             return count;

@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <h2>{{ title }}</h2>
-    <el-alert v-if="resource==='product'" title="库存同步来自原站公开页面。新增产品需匹配原站地址；关闭同步可手动维护库存。分组与子产品必须属于同一商家。" type="info" :closable="false" style="margin-bottom:18px" />
+    <el-alert v-if="resource==='product'" title="优先读取商家官方接口或购买页；失败时使用备用来源。实际来源和异常原因见表格。新增产品需提供正确商家购买编号；关闭同步可手动维护。" type="info" :closable="false" style="margin-bottom:18px" />
     <el-alert v-if="resource==='subscriber'" title="邮件服务尚需部署配置 SMTP；此页面管理订阅记录，实际投递状态以邮件服务配置为准。" type="warning" :closable="false" style="margin-bottom:18px" />
     <el-form inline @submit.prevent="search"><el-form-item label="名称"><el-input v-model="query.name" clearable @keyup.enter="search" /></el-form-item><el-button @click="search">查询</el-button>
       <el-button v-if="!readonly" type="primary" v-hasPermi="['stock:'+resource+':edit']" @click="edit()">新增</el-button>
@@ -12,6 +12,8 @@
       <el-table-column v-for="f in visibleFields" :key="f.key" :prop="f.key" :label="f.label" :min-width="f.key==='name'?230:f.key==='lastCheckedAt'?180:f.type==='bool'?90:120" show-overflow-tooltip>
         <template #default="{row}"><span>{{ display(f,row[f.key]) }}</span></template>
       </el-table-column>
+      <el-table-column v-if="resource==='product'" label="实际数据来源" min-width="180"><template #default="{row}"><span :title="row.lastSourceUrl">{{ {OFFICIAL_API:'商家官方 API',OFFICIAL_PAGE:'商家官方页面',THIRD_PARTY_PAGE:'备用聚合来源'}[row.lastSourceType]||'尚未同步' }}</span></template></el-table-column>
+      <el-table-column v-if="resource==='product'" prop="lastSyncError" label="同步异常 / 备用原因" min-width="260" show-overflow-tooltip />
       <el-table-column v-if="!readonly" label="操作" fixed="right" width="145"><template #default="{row}"><el-button link type="primary" v-hasPermi="['stock:'+resource+':edit']" @click="edit(row)">编辑</el-button><el-button link type="danger" v-hasPermi="['stock:'+resource+':edit']" @click="remove(row)">删除</el-button></template></el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" v-model:page="query.pageNo" v-model:limit="query.pageSize" @pagination="load" />
@@ -51,7 +53,7 @@ async function edit(row){
 }
 async function save(){await formRef.value.validate(); for(const f of props.fields){if(['parentId','productId','vendorId'].includes(f.key)&&form.value[f.key]==='')form.value[f.key]=null;}saving.value=true;try{await request.post({url:'/stock/'+props.resource+'/save',data:form.value});opened.value=false;ElMessage.success('保存成功');await load()}finally{saving.value=false}}
 async function remove(row){try{await ElMessageBox.confirm('确认删除 '+(row.name||row.id)+'？有关联产品的商家或分组需先处理关联数据。','删除确认',{type:'warning'})}catch{return}await request.delete({url:'/stock/'+props.resource+'/delete',params:{id:row.id}});ElMessage.success('删除成功');load()}
-async function sync(){syncing.value=true;try{const r=await request.post({url:'/stock/sync',timeout:60000});ElMessage.success('已同步 '+r+' 条记录');load()}finally{syncing.value=false}}
+async function sync(){syncing.value=true;try{const r=await request.post({url:'/stock/sync',timeout:180000});ElMessage.success('已同步 '+r+' 条记录');load()}finally{syncing.value=false}}
 async function loadReferences(){for(const [field,resource] of [['vendorId','vendor'],['productId','product']]){if(props.fields.some(f=>f.key===field)){try{const r=await request.get({url:'/stock/'+resource+'/page',params:{pageNo:1,pageSize:1000}});options[field]=r.list.map(p=>({value:p.id,label:p.name+' (#'+p.id+')'}))}catch{ /* 主表仍可加载，引用查询遵循独立权限。 */ }}}}
 onMounted(()=>{load();loadReferences()})
 </script>
