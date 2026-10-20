@@ -42,7 +42,7 @@ function display(f,v){ if(f.type==='datetime'&&v)return Array.isArray(v)?v.join(
 async function load(){ loading.value=true;try{const r=await request.get({url:'/stock/'+props.resource+'/page',params:query});rows.value=r.list;total.value=r.total}finally{loading.value=false} }
 function search(){query.pageNo=1;load()}
 async function edit(row){
-  form.value=row?{...row}:Object.fromEntries(props.fields.map(f=>[f.key,f.type==='bool'?['enabled'].includes(f.key):f.key==='intervalSeconds'?600:f.key==='sortOrder'?0:f.type==='number'?null:'']))
+  form.value=row?{...row}:Object.fromEntries(props.fields.map(f=>[f.key,f.type==='bool'?['enabled'].includes(f.key):f.key==='intervalSeconds'?120:f.key==='sortOrder'?0:f.type==='number'?null:'']))
   if(!row&&props.resource==='product')form.value.stockStatus='UNKNOWN'
   for(const [field,resource] of [['vendorId','vendor'],['parentId','product'],['productId','product']]){
     if(props.fields.some(f=>f.key===field)){const r=await request.get({url:'/stock/'+resource+'/page',params:{pageNo:1,pageSize:1000}});options[field]=r.list.filter(p=>field!=='parentId'||p.groupFlag&&p.id!==row?.id).map(p=>({value:p.id,label:p.name+' (#'+p.id+')'}))}

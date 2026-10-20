@@ -390,3 +390,6 @@ INSERT INTO vps_setting (`name`,`value`,`description`) VALUES ('siteDescription'
 INSERT INTO vps_setting (`name`,`value`,`description`) VALUES ('refreshSeconds','120','前台刷新间隔，单位秒');
 INSERT INTO vps_setting (`name`,`value`,`description`) VALUES ('footerText','库存信息仅供参考，以商家结算页为准。','页脚说明');
 INSERT INTO vps_setting (`name`,`value`,`description`) VALUES ('announcement','产品资料来自公开页面，库存由同步任务更新。','首页公告');
+
+-- 统一库存检查间隔为两分钟。
+UPDATE vps_product SET interval_seconds = 120;
