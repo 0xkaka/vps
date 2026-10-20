@@ -26,6 +26,7 @@ public class SourceSyncService {
     private final SourceParser parser;
     private final StockChangeService changes;
     private final MerchantSourceService merchants;
+    private final SpaceVpsSourceService spaceVps;
 
     public SourceSyncService(
             StringRedisTemplate redis,
@@ -33,16 +34,18 @@ public class SourceSyncService {
             CheckLogMapper logs,
             SourceParser parser,
             StockChangeService changes,
-            MerchantSourceService merchants) {
+            MerchantSourceService merchants,
+            SpaceVpsSourceService spaceVps) {
         this.redis = redis;
         this.products = products;
         this.logs = logs;
         this.parser = parser;
         this.changes = changes;
         this.merchants = merchants;
+        this.spaceVps = spaceVps;
     }
 
-    @Scheduled(fixedDelay = 120000, initialDelay = 90000)
+    @Scheduled(fixedRate = 120000, initialDelay = 90000)
     public void scheduled() {
         try {
             sync(false);
@@ -73,6 +76,8 @@ public class SourceSyncService {
                                             Boolean.TRUE.equals(p.getMonitorEnabled())
                                                     && Boolean.TRUE.equals(p.getEnabled())
                                                     && (force
+                                                            || p.getIntervalSeconds() <= 120
+                                                            || SpaceVpsSourceService.supports(p)
                                                             || p.getLastSyncedAt() == null
                                                             || p.getLastSyncedAt()
                                                                     .plusSeconds(
@@ -82,13 +87,17 @@ public class SourceSyncService {
             if (due.isEmpty()) {
                 return 0;
             }
-            Map<Long, MerchantSourceService.Result> official = merchants.read(due);
+            Map<Long, SourceParser.Snapshot> api = spaceVps.read(due);
+            Map<Long, MerchantSourceService.Result> official =
+                    merchants.read(due.stream().filter(p -> !api.containsKey(p.getId())).toList());
             List<Product> fallback =
                     due.stream()
                             .filter(
                                     p ->
-                                            official.get(p.getId()) == null
-                                                    || official.get(p.getId()).snapshot() == null)
+                                            !api.containsKey(p.getId())
+                                                    && (official.get(p.getId()) == null
+                                                            || official.get(p.getId()).snapshot()
+                                                                    == null))
                             .toList();
             // 官方来源缺失或访问失败才查询备用聚合来源，来源标签不会伪装为官方。
             Map<String, Map<String, SourceParser.Snapshot>> byPage = new LinkedHashMap<>();
@@ -118,11 +127,16 @@ public class SourceSyncService {
             int count = 0;
             for (Product p : due) {
                 var direct = official.get(p.getId());
-                SourceParser.Snapshot state = direct == null ? null : direct.snapshot();
+                SourceParser.Snapshot state = api.get(p.getId());
                 String type = "THIRD_PARTY_PAGE";
                 String url = p.getSourcePage();
                 String error = direct == null ? null : direct.error();
                 if (state != null) {
+                    type = SpaceVpsSourceService.TYPE;
+                    url = SpaceVpsSourceService.URL;
+                    error = null;
+                } else if (direct != null && direct.snapshot() != null) {
+                    state = direct.snapshot();
                     type = direct.kind();
                     url = direct.url();
                 } else {

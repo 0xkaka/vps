@@ -12,7 +12,7 @@
       <el-table-column v-for="f in visibleFields" :key="f.key" :prop="f.key" :label="f.label" :min-width="f.key==='name'?230:f.key==='lastCheckedAt'?180:f.type==='bool'?90:120" show-overflow-tooltip>
         <template #default="{row}"><span>{{ display(f,row[f.key]) }}</span></template>
       </el-table-column>
-      <el-table-column v-if="resource==='product'" label="实际数据来源" min-width="180"><template #default="{row}"><span :title="row.lastSourceUrl">{{ {OFFICIAL_API:'商家官方 API',OFFICIAL_PAGE:'商家官方页面',THIRD_PARTY_PAGE:'备用聚合来源'}[row.lastSourceType]||'尚未同步' }}</span></template></el-table-column>
+      <el-table-column v-if="resource==='product'" label="实际数据来源" min-width="180"><template #default="{row}"><span :title="row.lastSourceUrl">{{ {OFFICIAL_API:'商家官方 API',OFFICIAL_PAGE:'商家官方页面',THIRD_PARTY_PAGE:'备用聚合来源',THIRD_PARTY_API:'星空VPS · 第三方 API'}[row.lastSourceType]||'尚未同步' }}</span></template></el-table-column>
       <el-table-column v-if="resource==='product'" prop="lastSyncError" label="同步异常 / 备用原因" min-width="260" show-overflow-tooltip />
       <el-table-column v-if="!readonly" label="操作" fixed="right" width="145"><template #default="{row}"><el-button link type="primary" v-hasPermi="['stock:'+resource+':edit']" @click="edit(row)">编辑</el-button><el-button link type="danger" v-hasPermi="['stock:'+resource+':edit']" @click="remove(row)">删除</el-button></template></el-table-column>
     </el-table>
