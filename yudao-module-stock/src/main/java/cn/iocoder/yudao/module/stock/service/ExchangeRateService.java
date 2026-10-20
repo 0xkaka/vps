@@ -29,20 +29,22 @@ public class ExchangeRateService {
         this.json = json;
     }
 
-    @Scheduled(fixedDelay = 3600000, initialDelay = 5000)
+    @Scheduled(fixedDelay = 60000, initialDelay = 5000)
     public void refresh() {
         try {
+            if (Boolean.TRUE.equals(redis.hasKey(KEY + ":next"))) return;
             String body =
                     Jsoup.connect("https://api.frankfurter.dev/v1/latest?base=CNY")
                             .ignoreContentType(true)
                             .followRedirects(false)
-                            .timeout(5000)
+                            .timeout(10000)
                             .maxBodySize(65536)
                             .userAgent("VPS-Stock-Monitor/1.0")
                             .execute()
                             .body();
             Map<String, Object> value = parse(json.readTree(body), LocalDate.now(ZoneOffset.UTC));
             redis.opsForValue().set(KEY, json.writeValueAsString(value), Duration.ofDays(7));
+            redis.opsForValue().set(KEY + ":next", "1", Duration.ofHours(1));
         } catch (Exception e) {
             LOG.warn("参考汇率更新失败，保留已缓存汇率: {}", e.getClass().getSimpleName());
         }
