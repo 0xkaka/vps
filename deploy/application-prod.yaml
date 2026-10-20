@@ -1,0 +1,112 @@
+server:
+  address: 127.0.0.1
+  port: 48080
+  tomcat:
+    threads:
+      max: 80
+      min-spare: 5
+spring:
+  datasource:
+    druid:
+      stat-view-servlet:
+        enabled: false
+      web-stat-filter:
+        enabled: false
+    dynamic:
+      primary: master
+      strict: true
+      druid:
+        initial-size: 1
+        min-idle: 1
+        max-active: 8
+        max-wait: 30000
+        validation-query: SELECT 1
+      datasource:
+        master:
+          name: vps_stock
+          url: jdbc:mysql://127.0.0.1:3306/vps_stock?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+          username: vps_app
+          password: ${VPS_DB_PASSWORD}
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: ${VPS_REDIS_PASSWORD}
+      database: 0
+      connect-timeout: 3s
+      timeout: 3s
+  quartz:
+    auto-startup: false
+    job-store-type: memory
+    properties:
+      org.quartz.threadPool.threadCount: 2
+  boot:
+    admin:
+      context-path: /internal-admin
+      client:
+        enabled: false
+      server:
+        enabled: false
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+knife4j:
+  enable: false
+justauth:
+  enabled: true
+logging:
+  file:
+    name: /opt/vps/logs/application.log
+  level:
+    root: INFO
+    cn.iocoder.yudao: INFO
+mybatis-plus:
+  encryptor:
+    password: ${VPS_ENCRYPT_PASSWORD}
+yudao:
+  tenant:
+    enable: false
+  security:
+    mock-enable: false
+  captcha:
+    enable: false
+  demo: false
+  web:
+    admin-ui:
+      url: ${VPS_PUBLIC_URL:http://68.68.249.248}/admin/
+  api-encrypt:
+    enable: false
+  access-log:
+    enable: true
+stock:
+  public-url: ${VPS_PUBLIC_URL:http://68.68.249.248}
+  smtp:
+    host: ${VPS_SMTP_HOST:}
+    port: ${VPS_SMTP_PORT:587}
+    username: ${VPS_SMTP_USERNAME:}
+    password: ${VPS_SMTP_PASSWORD:}
+    from: ${VPS_SMTP_FROM:}
+    ssl: ${VPS_SMTP_SSL:false}
+  push:
+    public-key: ${VPS_PUSH_PUBLIC_KEY:}
+    private-key: ${VPS_PUSH_PRIVATE_KEY:}
+# Framework social adapters require config objects even when unused.
+# These deliberately invalid placeholders cannot authenticate to any provider.
+wx:
+  mp:
+    app-id: vps-unconfigured
+    secret: vps-unconfigured
+  miniapp:
+    appid: vps-unconfigured
+    secret: vps-unconfigured

@@ -1,0 +1,21 @@
+[Unit]
+Description=VPS inventory administration (Yudao)
+After=network.target mysql.service redis-server.service
+Requires=mysql.service redis-server.service
+[Service]
+User=vps
+Group=vps
+WorkingDirectory=/opt/vps
+EnvironmentFile=/etc/vps-stock.env
+ExecStart=/usr/bin/java -Xms192m -Xmx768m -XX:MaxMetaspaceSize=320m -XX:MaxDirectMemorySize=128m -Duser.timezone=Asia/Shanghai -jar /opt/vps/app.jar --spring.profiles.active=prod --spring.config.additional-location=file:/opt/vps/config/
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/vps/logs /opt/vps/uploads
+UMask=0027
+[Install]
+WantedBy=multi-user.target

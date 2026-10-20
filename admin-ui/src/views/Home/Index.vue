@@ -1,0 +1,1 @@
+<template><ContentWrap><h1>VPS 库存运营</h1><p>维护商家、产品、库存、订阅与展示内容。</p><el-space wrap><el-button type="primary" @click="$router.push('/stock/product')">产品与库存</el-button><el-button @click="$router.push('/stock/checklog')">查看同步记录</el-button><a href="/" target="_blank" rel="noopener">打开展示首页</a></el-space></ContentWrap></template>
