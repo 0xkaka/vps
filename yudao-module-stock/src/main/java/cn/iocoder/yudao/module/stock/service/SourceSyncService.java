@@ -27,6 +27,7 @@ public class SourceSyncService {
     private final StockChangeService changes;
     private final MerchantSourceService merchants;
     private final SpaceVpsSourceService spaceVps;
+    private long lastFullRoundStartedAt;
 
     public SourceSyncService(
             StringRedisTemplate redis,
@@ -45,16 +46,28 @@ public class SourceSyncService {
         this.spaceVps = spaceVps;
     }
 
-    @Scheduled(fixedRate = 120000, initialDelay = 90000)
+    @Scheduled(fixedRate = 30000, initialDelay = 90000)
     public void scheduled() {
         try {
-            sync(false);
+            long now = System.currentTimeMillis();
+            boolean fastOnly = now - lastFullRoundStartedAt < 120000;
+            if (!fastOnly) lastFullRoundStartedAt = now;
+            sync(false, fastOnly);
         } catch (Exception e) {
             LOG.warn("库存同步失败: {}", e.getMessage());
         }
     }
 
     public int sync(boolean force) {
+        return sync(force, false);
+    }
+
+    static boolean supportsFastCheck(Product product) {
+        var target = MerchantParser.target(product);
+        return target != null && Set.of("bandwagon", "vps").contains(target.merchant());
+    }
+
+    int sync(boolean force, boolean fastOnly) {
         String token = UUID.randomUUID().toString();
         if (!Boolean.TRUE.equals(
                 redis.opsForValue().setIfAbsent(LOCK, token, Duration.ofMinutes(5)))) {
@@ -75,6 +88,7 @@ public class SourceSyncService {
                                     p ->
                                             Boolean.TRUE.equals(p.getMonitorEnabled())
                                                     && Boolean.TRUE.equals(p.getEnabled())
+                                                    && (!fastOnly || supportsFastCheck(p))
                                                     && (force
                                                             || p.getIntervalSeconds() <= 120
                                                             || SpaceVpsSourceService.supports(p)
@@ -87,7 +101,7 @@ public class SourceSyncService {
             if (due.isEmpty()) {
                 return 0;
             }
-            Map<Long, SourceParser.Snapshot> api = spaceVps.read(due);
+            Map<Long, SourceParser.Snapshot> api = fastOnly ? Map.of() : spaceVps.read(due);
             Map<Long, MerchantSourceService.Result> official =
                     merchants.read(due.stream().filter(p -> !api.containsKey(p.getId())).toList());
             List<Product> fallback =
@@ -101,7 +115,9 @@ public class SourceSyncService {
                             .toList();
             // 官方来源缺失或访问失败才查询备用聚合来源，来源标签不会伪装为官方。
             Map<String, Map<String, SourceParser.Snapshot>> byPage = new LinkedHashMap<>();
-            for (String page : fallback.stream().map(Product::getSourcePage).distinct().toList()) {
+            for (String page :
+                    (fastOnly ? List.<Product>of() : fallback)
+                            .stream().map(Product::getSourcePage).distinct().toList()) {
                 if (!SourceParser.PAGES.contains(page)) {
                     continue;
                 }
@@ -149,7 +165,7 @@ public class SourceSyncService {
                             type.equals(p.getLastSourceType())
                                     && Objects.equals(url, p.getLastSourceUrl());
                     if (changes.apply(p, state, type, url, error, notify)) count++;
-                } else {
+                } else if (!fastOnly) {
                     String message = (error == null ? "" : error + "；") + "备用来源不可用或未匹配，保留上次库存";
                     changes.failed(p, message);
                     CheckLog log = new CheckLog();
@@ -161,6 +177,7 @@ public class SourceSyncService {
                     logs.insert(log);
                 }
             }
+            if (count == 0 && fastOnly) return 0;
             if (count == 0) throw new IllegalStateException("本轮无有效库存更新");
             redis.opsForValue().set("vps:source:lastSuccess", now.toString());
             redis.opsForValue().increment("vps:source:checks", count);

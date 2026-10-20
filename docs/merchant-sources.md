@@ -78,3 +78,9 @@ JUnit 覆盖域名伪装、系列入口误匹配、缺项/未知字段、机房�
 首次启用/切换来源静默建立基线，避免口径差异触发补货通知。单次请求超时 15 秒、响应最大 8 MiB、禁止跟随重定向。使用规则见 [星空 VPS API 文档](https://spacevps.cc/api)。
 
 部署前服务器只读试跑：现有商品按 PID 成功匹配 80 条（VMISS 25、DMIT 53、GoMami 2）。上游目录总数不等于本站匹配数，未自动新增或替换旧型号。5 项新快照适配测试与原 21 项测试全部通过。
+
+### 30-second direct checks (2026-10-21)
+
+The scheduler now ticks every 30 seconds. A full round remains due every 120 seconds; intermediate rounds query only products whose canonical merchant target is BandwagonHost or V.PS. The existing distributed lock, domain backoff and stock transition logic remain in effect. Fast-round failures keep the last inventory and do not trigger extra aggregator traffic. The same scheduled worker executes rounds serially: slow full rounds, request timeouts and backoff can delay a 30-second check, so the homepage explicitly says **部分商家 30 秒级检查**, not a guaranteed end-to-end restock latency. The public page reads the site's catalog every 30 seconds.
+
+VPSOSO inspection: `/vps/vpshosting` serves stock in its HTML. Its inline script reloads the page every 300000 ms and overwrites the visible sync time with the local page-open time. The same-origin POST `/api/compare-data` accepts product IDs and returns display fields including `stock_status` and a merchant purchase URL, but does not identify the backend inventory supplier or a per-product stock observation timestamp. The fixed “30秒级实时监控” copy alone does not establish its collection interval. We do not use this endpoint as an inventory source.
