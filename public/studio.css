@@ -142,3 +142,29 @@ body.studio .email-input-row input{color:var(--text)}
  body.studio .buy{padding:6px 8px}
 }
 @media(max-width:800px){body.studio #products>tr:not(.group){padding:12px 14px;gap:9px}body.studio .product-vendor{font-size:9px;margin-bottom:2px}}
+/* Group headers anchor the hierarchy; child rows remain quieter. */
+body.studio #products>.group{background:var(--soft)}
+body.studio #products>.group td{padding-top:14px;padding-bottom:14px;border-bottom-color:var(--line)}
+body.studio #products>.group td:first-child{border-left:3px solid transparent;padding-left:15px}
+body.studio #products>.group button{display:block;width:100%;text-align:left;min-height:32px;padding:3px 0;color:var(--text);font-size:13px;font-weight:650;line-height:1.6}
+body.studio #products>.group.is-expanded{background:linear-gradient(90deg,#a68be726,#a68be70c 75%)}
+body.studio #products>.group.is-expanded td:first-child{border-left-color:var(--accent)}
+body.studio #products>.group.is-expanded button{color:var(--accent)}
+body.studio #products>.group .group-total{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--muted);font-size:10px}
+body.studio #products>.child td:first-child{position:relative;padding-left:36px}
+body.studio #products>.child td:first-child::before{content:'';position:absolute;left:17px;top:0;bottom:0;width:1px;background:#a78bdf40}
+body.studio #products>.child td:first-child::after{content:'';position:absolute;left:17px;top:50%;width:10px;height:1px;background:#a78bdf55}
+body.studio #products>.child .product-name{font-weight:500}
+body.studio #products>.child:has(+ .group) td{border-bottom:2px solid var(--line)}
+body.studio .row-details[open]{margin-top:7px;padding:9px 11px;border:1px solid #a78bdf33;border-radius:7px;background:#a78bdf0b}
+body.studio .row-details[open]>summary{color:var(--accent);font-weight:600;margin-bottom:7px}
+body.studio .row-details[open] .hint{font-size:11px;line-height:1.8}
+@media(max-width:800px){
+ body.studio #products>.group{padding:12px;margin:13px 0 9px;border:1px solid var(--line);border-left:3px solid transparent;border-radius:9px;background:var(--soft)}
+ body.studio #products>.group.is-expanded{border-left-color:var(--accent);background:linear-gradient(110deg,#a68be726,#a68be70c)}
+ body.studio #products>.group td:first-child{border-left:0}
+ body.studio #products>.group button{font-size:12px;min-height:32px}
+ body.studio #products>.child{width:calc(100% - 12px);margin-left:12px;border-left:2px solid #a78bdf40!important}
+ body.studio #products>.child td:first-child{padding-left:0}
+ body.studio #products>.child td:first-child::before,body.studio #products>.child td:first-child::after{display:none}
+}
