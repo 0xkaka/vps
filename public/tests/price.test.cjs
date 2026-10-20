@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+require('../price.js');
+const fx={date:'2026-10-20',cnyPerUnit:{USD:7,CAD:5,EUR:8}};
+const convert=label=>StockPrice.monthlyCny(label,fx)?.amount;
+assert.equal(convert('USD 120/年'),70);
+assert.equal(convert('$30/季度'),70);
+assert.equal(convert('5CAD/月'),25);
+assert.equal(convert('€10/月'),80);
+assert.equal(convert('￥36/月'),36);
+assert.equal(convert('USD 240/2年'),70);
+assert.equal(convert('USD 60/半年'),70);
+assert.equal(convert('USD 120/年 起'),undefined);
+assert.equal(convert('120/月'),undefined);
+assert.equal(convert('USD 10/0月'),undefined);
+assert.equal(StockPrice.monthlyCny('$10/月',{}),null);
+console.log('11 currency and billing-period checks passed');
