@@ -33,8 +33,38 @@ function chooseVendor(id){active=id;if(id!=='all')for(const p of catalog.product
 $('#overview').onclick=e=>{e.preventDefault();$('#search').value='';$('#stockFilter').value='all';chooseVendor('all')};
 $('#vendorSelect').onchange=e=>chooseVendor(e.target.value==='all'?'all':Number(e.target.value));
 $('#clearFilters').onclick=()=>{$('#search').value='';$('#stockFilter').value='all';render();$('#search').focus()};
-function row(p,count){const tr=document.createElement('tr');tr.className=p.groupFlag?'group':p.parentId?'child':'';const cells=Array.from({length:7},()=>document.createElement('td'));tr.append(...cells);
- if(p.groupFlag){const expanded=opened.has(p.id)||!!$('#search').value.trim()||$('#stockFilter').value!=='all';const b=text('button',(expanded?'▾ ':'▸ ')+p.name+' ('+count+')');b.setAttribute('aria-expanded',expanded);tr.classList.toggle('is-expanded',expanded);b.onclick=()=>{opened.has(p.id)?opened.delete(p.id):opened.add(p.id);render()};cells[0].append(b)}else cells[0].append(link(p.name,p.purchaseUrl,'product-name'));
+let groupTransition=false;
+async function toggleGroup(id){
+ if(groupTransition)return;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const rows=[...document.querySelectorAll('#products>tr')];
+ const before=new Map(rows.map(r=>[r.dataset.productId,r.getBoundingClientRect().top]));
+ const closing=opened.has(id);
+ groupTransition=true;
+ try{
+  if(closing&&!reduced){
+   const header=rows.find(r=>r.dataset.productId===String(id));
+   const leaving=[];let next=header?.nextElementSibling;
+   while(next&&next.classList.contains('child')){if(next.getBoundingClientRect().top<innerHeight)leaving.push(next);next=next.nextElementSibling}
+   await Promise.all(leaving.map(r=>r.animate([{opacity:1},{opacity:0,transform:'translateY(-4px)'}],{duration:120,easing:'ease-out'}).finished.catch(()=>{})));
+  }
+  closing?opened.delete(id):opened.add(id);render();
+  const current=[...document.querySelectorAll('#products>tr')];
+  const header=current.find(r=>r.dataset.productId===String(id));
+  header?.querySelector('button')?.focus({preventScroll:true});
+  if(!reduced){
+   header?.querySelector('.group-chevron')?.animate([{transform:closing?'rotate(90deg)':'rotate(0deg)'},{transform:closing?'rotate(0deg)':'rotate(90deg)'}],{duration:240,easing:'ease'});
+   for(const r of current){
+    const top=r.getBoundingClientRect().top;if(top>innerHeight||top+r.offsetHeight<0)continue;
+    const old=before.get(r.dataset.productId);
+    if(old===undefined)r.animate([{opacity:0,transform:'translateY(-6px)'},{opacity:1,transform:'none'}],{duration:260,easing:'cubic-bezier(.2,.7,.2,1)'});
+    else if(Math.abs(old-top)>1)r.animate([{transform:'translateY('+Math.max(-90,Math.min(90,old-top))+'px)'},{transform:'none'}],{duration:260,easing:'cubic-bezier(.2,.7,.2,1)'});
+   }
+  }
+ }finally{groupTransition=false}
+}
+function row(p,count){const tr=document.createElement('tr');tr.dataset.productId=p.id;tr.className=p.groupFlag?'group':p.parentId?'child':'';const cells=Array.from({length:7},()=>document.createElement('td'));tr.append(...cells);
+ if(p.groupFlag){const expanded=opened.has(p.id)||!!$('#search').value.trim()||$('#stockFilter').value!=='all';const b=text('button','');const arrow=text('span','›','group-chevron');arrow.setAttribute('aria-hidden','true');b.append(arrow,text('span',p.name),text('span',count,'group-count'));b.type='button';b.setAttribute('aria-expanded',expanded);tr.classList.toggle('is-expanded',expanded);b.onclick=()=>toggleGroup(p.id);cells[0].append(b)}else cells[0].append(link(p.name,p.purchaseUrl,'product-name'));
  if(!p.groupFlag){const vendor=catalog.vendors.find(v=>v.id===p.vendorId);if(vendor)cells[0].prepend(text('span',vendor.name,'product-vendor'))}const extras=text('div','','pills');for(const [name,key]of[['⚡ 测速','speedUrl'],['🔭 透镜','lookingGlassUrl']])if(p[key])extras.append(link(name,p[key]));const details=document.createElement('details');details.className='row-details';details.append(text('summary','详情与链接'));if(p.description)details.append(text('p',p.description,'hint'));details.append(extras);cells[0].append(details);
  cells[1].append(text('div',p.specification));cells[4].className='network-cell';const routes=(p.routeTags||'').replace(/[👑🌿]/gu,'').split(/[；;]+/).map(x=>x.trim()).filter(Boolean);if(routes.length){const tags=text('div','','network-tags');for(const route of routes)tags.append(text('span',route,'network-tag'));cells[4].append(tags)}else cells[4].append(text('span','线路待补充','hint'));
  const states={IN_STOCK:['● 有货','available'],OUT_OF_STOCK:['○ 无货',''],UNKNOWN:['? 未知','unknown']},state=states[p.stockStatus]||states.UNKNOWN;const regions=(catalog.regions||[]).filter(r=>r.productId===p.id);if(regions.length){const wrap=text('div','','pills');for(const r of regions){const st=states[r.stockStatus]||states.UNKNOWN;const a=link(r.name,r.purchaseUrl,'status '+st[1]);a.title=st[0];wrap.append(a)}const regionButton=text('button',regions.filter(r=>r.stockStatus==='IN_STOCK').length+' / '+regions.length+' 机房有货 ﹀','region-trigger');regionButton.type='button';regionButton.onclick=()=>{let dialog=$('#regionDialog');if(!dialog){dialog=document.createElement('dialog');dialog.id='regionDialog';document.body.append(dialog)}dialog.replaceChildren();const heading=text('div','','region-dialog-heading');const close=text('button','×');close.type='button';close.setAttribute('aria-label','关闭机房列表');close.onclick=()=>dialog.close();heading.append(text('h2','机房库存'),close);dialog.append(heading,text('p',p.name,'hint'),wrap);dialog.showModal()};cells[2].append(text('span',state[0],'status '+state[1]),regionButton)}else cells[2].append(text('span',state[0],'status '+state[1]));const price=(p.description||'').match(/参考价格[：:]\s*([^；;（(]+)/)||(p.name||'').match(/([$€¥￥]\s*\d+(?:\.\d+)?\s*[/／]\s*(?:季度|个月|月|季|年))/)||(p.name||'').match(/(\d+(?:\.\d+)?\s*(?:CAD|USD|EUR|CNY)\s*[/／]\s*(?:月|季|年))/i);cells[3].append(text('strong',price?price[1].trim():'—','reference-price'));if(price){const converted=StockPrice.monthlyCny(price[1],exchangeRates);const note=text('small',converted?'约 ¥'+converted.amount.toFixed(2)+'/月':'暂无折算价','price-note');note.title=converted?(converted.currency==='CNY'?'按账期折合月价':'参考汇率日期：'+converted.date+' · Frankfurter，每日更新；非月付账单'):'币种、账期或参考汇率暂不可用';cells[3].append(note)}if(p.lastSyncError&&p.lastSyncError.includes('保留上次库存'))cells[4].append(text('div','更新异常 · 显示上次结果','time sync-warning'));if(p.purchaseUrl)cells[5].append(link('立即购买 ↗',p.purchaseUrl,'buy'));const channels=catalog.channels.filter(c=>c.productId===p.id);const wrap=text('div','','pills');wrap.append(...channels.map(c=>link(c.name,c.url)));if(channels.length){const d=document.createElement('details');d.className='channel-details';d.append(text('summary','订阅 '+channels.length),wrap);cells[6].append(d)}else{cells[6].classList.add('no-channels');cells[6].append(text('span','—','hint'))}if(p.groupFlag)cells[2].replaceChildren(text('span',count+' 款产品','group-total'));return tr}
