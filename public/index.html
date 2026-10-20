@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a1020"><meta name="description" content="VPS 产品库存状态与补货订阅"><title>VPS 库存监控</title><link rel="stylesheet" href="/style.css?v=10"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.json"></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a1020"><meta name="description" content="VPS 产品库存状态与补货订阅"><title>VPS 库存监控</title><link rel="stylesheet" href="/style.css?v=11"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.json"></head>
 <body>
 <aside class="sidebar">
 <a class="brand" href="/" aria-label="库存监控首页"><span class="brand-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 7 8-4 8 4-8 4-8-4Zm0 5 8 4 8-4M4 17l8 4 8-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>VPS<span class="brand-light"> / 库存站</span><small>FIND YOUR NEXT SERVER</small></span></a>
-<div class="nav-label">工作台</div>
+<button id="mobileVendorButton" type="button" class="mobile-vendor-trigger" aria-haspopup="dialog"><span id="mobileVendorLabel">选择商家</span> ﹀</button><div class="nav-label">工作台</div>
 <a id="overview" class="side-item selected" href="#inventory"><span>▦</span> 库存总览 <i>LIVE</i></a>
 <section class="vendor-section" aria-label="商家目录"><div class="vendor-heading">商家目录 <span id="sidebarVendorCount">—</span></div><div id="tabs" class="tabs" aria-label="商家筛选"></div></section>
 <button class="side-item" id="openSubscriptions"><span>♧</span> 补货订阅</button>
@@ -23,4 +23,4 @@
 <div class="table-wrap"><table><thead><tr><th>产品 / 型号</th><th>配置与线路</th><th>库存</th><th>同步间隔</th><th>更新时间</th><th>购买</th><th>订阅</th></tr></thead><tbody id="products"><tr><td colspan="7" class="loading">正在加载产品目录…</td></tr></tbody></table></div><div class="table-footer"><p id="updated"></p><span>库存以商家结算页为准 <span aria-hidden="true">↗</span></span></div></section>
 <details id="subscriptionPanel" class="subscription-panel"><summary><span class="notification-icon">♧</span><span><strong>浏览器通知设置</strong><small>浏览器后台推送设置与兼容说明</small></span><span class="expand-text">订阅设置 <b>＋</b></span></summary><section class="subscriptions"><article><h2>浏览器通知</h2><p id="pushHint">关闭页面后也能接收补货提醒</p><button id="push">开启浏览器通知</button><p class="hint">iOS 用户需添加到主屏幕后打开，并允许通知。</p></article></section></details>
 <footer><span>VPS / 库存站</span><p id="footer"></p><div id="footerLinks"></div></footer>
-</main><div id="toast" role="status" aria-live="polite"></div><dialog id="confirmation"><h2>确认邮箱操作</h2><p>请确认这是你本人发起的订阅或退订请求。</p><button id="confirmEmail">确认</button><button id="cancelEmail" class="secondary">取消</button></dialog><script src="/app.js?v=10" defer></script></body></html>
+</main><dialog id="mobileVendorDialog"><div class="mobile-vendor-heading"><h2>选择商家</h2><button id="closeVendorDialog" type="button" aria-label="关闭商家选择">×</button></div><div id="mobileVendorList"></div></dialog><div id="toast" role="status" aria-live="polite"></div><dialog id="confirmation"><h2>确认邮箱操作</h2><p>请确认这是你本人发起的订阅或退订请求。</p><button id="confirmEmail">确认</button><button id="cancelEmail" class="secondary">取消</button></dialog><script src="/app.js?v=11" defer></script></body></html>
