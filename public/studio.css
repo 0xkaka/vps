@@ -124,3 +124,21 @@ body.studio .email-popover h2{color:var(--text)}
 body.studio .email-input-row{background:var(--bg);border-color:var(--line)}
 body.studio .email-input-row input{color:var(--text)}
 @media(max-width:800px){body.studio .refresh-button{font-size:0;flex:0 0 35px;overflow:hidden}body.studio .refresh-button>span{font-size:21px;margin:0}body.studio .email-popover{border-radius:12px}}
+/* Compact catalog: allocate space explicitly instead of stretching the model column. */
+@media(min-width:801px){
+ body.studio .table-wrap table{table-layout:fixed;width:100%;min-width:960px}
+ body.studio th:nth-child(1){width:25%}body.studio th:nth-child(2){width:23%}
+ body.studio th:nth-child(3){width:11%}body.studio th:nth-child(4){width:12%}
+ body.studio th:nth-child(5){width:14%}body.studio th:nth-child(6){width:9%}body.studio th:nth-child(7){width:6%}
+ body.studio td{padding:9px 10px;overflow-wrap:anywhere}
+ body.studio td:nth-child(5){min-width:0}
+ body.studio .product-vendor{display:none}
+ body.studio .product-name{line-height:1.5;font-size:12px}
+ body.studio .row-details{margin-top:3px}
+ body.studio .row-details summary{font-size:9px;line-height:1.4}
+ body.studio .row-details[open]{max-width:100%}
+ body.studio .group td{padding-top:8px;padding-bottom:8px}
+ body.studio .region-trigger{min-height:22px;margin-top:3px;font-size:9px}
+ body.studio .buy{padding:6px 8px}
+}
+@media(max-width:800px){body.studio #products>tr:not(.group){padding:12px 14px;gap:9px}body.studio .product-vendor{font-size:9px;margin-bottom:2px}}
