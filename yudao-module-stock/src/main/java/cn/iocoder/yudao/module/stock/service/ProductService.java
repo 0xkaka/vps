@@ -39,6 +39,9 @@ public class ProductService {
         StockValidation.validate(item);
         if (Boolean.TRUE.equals(item.getMonitorEnabled())
                 && (item.getSourceKey() == null || item.getSourceKey().isBlank())) {
+            if (!SourceParser.MAIN_PAGE.equals(item.getSourcePage())) {
+                throw new ServiceException(1_050_000_001, "扩展来源需要填写对应的稳定匹配键");
+            }
             if (item.getSourceUrl() == null || item.getPurchaseUrl() == null) {
                 throw new ServiceException(1_050_000_001, "开启原站同步需要来源地址和购买链接");
             }

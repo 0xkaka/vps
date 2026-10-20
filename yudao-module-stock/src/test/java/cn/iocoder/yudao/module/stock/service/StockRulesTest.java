@@ -15,6 +15,70 @@ import java.time.LocalDateTime;
 /** 抓取失败保护、库存通知边界及危险输入回归测试。 @author vps */
 class StockRulesTest {
     @Test
+    void matrixModelsSharingNamesOrLinksKeepDistinctIdentities() {
+        assertNotEquals(
+                SourceParser.matrixKey("搬瓦工", "DC1", "SPECIAL", "https://a/pid=1"),
+                SourceParser.matrixKey("搬瓦工", "DC2", "SPECIAL", "https://a/pid=1"));
+        assertNotEquals(
+                SourceParser.matrixKey("DMIT", "LA", "TINY", "https://a/pid=1"),
+                SourceParser.matrixKey("DMIT", "LA", "TINY", "https://a/pid=2"));
+    }
+
+    @Test
+    void matrixDoesNotInventCheckTimeOrTreatInvitationAsAvailable() {
+        String[] cells = new String[25];
+        java.util.Arrays.fill(cells, "");
+        cells[0] = "搬瓦工";
+        cells[2] = "DC99";
+        cells[3] = "MINIBOX";
+        cells[4] = "需邀请码";
+        cells[14] = "<a href='https://bwh91.com/pid=151'>购买</a>";
+        String row = "<tr><td>" + String.join("</td><td>", cells) + "</td></tr>";
+        var snapshots =
+                new SourceParser()
+                        .parsePage(
+                                "https://matrix.bwh91.com/",
+                                Jsoup.parse(
+                                        "<table id='vpsTable'><tbody>" + row + "</tbody></table>"));
+        var snapshot = snapshots.values().iterator().next();
+        assertEquals("UNKNOWN", snapshot.status());
+        assertNull(snapshot.checked());
+    }
+
+    @Test
+    void dedicatedPageUsesLastTimeInsteadOfPidLabel() {
+        var doc =
+                Jsoup.parse(
+                        "<table><tbody><tr><td><div class='product-name'>Test</div><div"
+                            + " class='time-info'>PID: 123</div><span class='status-badge"
+                            + " status-in-stock'>有货</span><div class='time-info'>2026-10-20"
+                            + " 12:30:00</div><a class='purchase-btn'"
+                            + " href='https://bwh91.com/pid=123'>购买</a></td></tr></tbody></table>");
+        var result = new SourceParser().parsePage("https://stock.bwh91.com/", doc);
+        assertEquals("IN_STOCK", result.values().iterator().next().status());
+        assertEquals(
+                LocalDateTime.of(2026, 10, 20, 12, 30),
+                result.values().iterator().next().checked());
+    }
+
+    @Test
+    void sourcePagesMustMatchExplicitAllowlist() {
+        Product p = new Product();
+        p.setSourcePage("https://stock.bwh91.com.attacker.test/");
+        assertThrows(RuntimeException.class, () -> StockValidation.validate(p));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SourceParser().parsePage("http://127.0.0.1/", Jsoup.parse("<html/>")));
+        assertThrows(
+                IllegalStateException.class,
+                () ->
+                        new SourceParser()
+                                .parsePage(
+                                        "https://matrix.bwh91.com/",
+                                        Jsoup.parse("<html>unavailable</html>")));
+    }
+
+    @Test
     void parsesDistinctGroupAndProductKeys() {
         String row =
                 "<tr data-url='https://a.test/' data-purchase='https://b.test/' %s><td><span"

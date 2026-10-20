@@ -10,6 +10,18 @@ import jakarta.validation.constraints.*;
 public class Product {
     private Long id;
 
+    /** 固定白名单内的库存来源页面。 */
+    @Size(max = 255)
+    private String sourcePage = "https://stock.vpszdm.com/";
+
+    public String getSourcePage() {
+        return sourcePage;
+    }
+
+    public void setSourcePage(String value) {
+        sourcePage = value;
+    }
+
     /** 原站稳定匹配键，管理链接更改不影响同步。 */
     @Size(max = 64)
     private String sourceKey;

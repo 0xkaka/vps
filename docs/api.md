@@ -41,7 +41,8 @@
 - `purchaseUrl/speedUrl/lookingGlassUrl/reviewUrl` 为独立链接，限制 HTTP/HTTPS。
 - `stockStatus`：`IN_STOCK / OUT_OF_STOCK / UNKNOWN`。
 - `intervalSeconds` 最少 120 秒；`monitorEnabled` 控制原站同步；`lastCheckedAt` 为原站检查时间，`lastSyncedAt` 为本系统同步时间。
-- `sourceKey` 是来源地址、原始购买地址和是否分组的 SHA-256；原站 URL 变化后需重新匹配。
+- `sourcePage` 选择白名单内的五个页面；`sourceKey` 为各适配器计算的稳定匹配键。大全按商家、机房、型号、购买链接区分，独立库存页按名称、购买链接区分，综合页沿用原匹配规则。来源标识变化后需重新匹配。
+- 大全没有提供检查时间时，`lastCheckedAt` 为 null，页面另外显示 `lastSyncedAt`，不会将抓取时间冒充商家检查时间。
 - Region：`sourceName` 用于同步匹配，`name` 用于显示，`stockStatus` 和 `purchaseUrl` 独立管理。
 - 时间由框架 JSON 序列化为毫秒时间戳；数据库和 Java 运行时使用 Asia/Shanghai。
 

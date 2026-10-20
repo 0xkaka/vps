@@ -32,6 +32,7 @@ mysql vps_stock < /opt/vps/source/sql/mysql/vps.sql
 mysql vps_stock < /opt/vps/source/sql/mysql/vps-region.sql
 mysql vps_stock < /opt/vps/source/sql/mysql/vps-seed.sql
 mysql vps_stock < /opt/vps/source/sql/mysql/vps-region-seed.sql
+mysql vps_stock < /opt/vps/source/sql/mysql/vps-extended-seed.sql
 mysql vps_stock < /tmp/vps-password.sql
 rm -f /tmp/vps-init.sql /tmp/vps-password.sql
 cp /opt/vps/source/deploy/application-prod.yaml /opt/vps/config/

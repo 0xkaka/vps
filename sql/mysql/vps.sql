@@ -15,6 +15,7 @@ CREATE TABLE vps_vendor (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Vendor管理';
 
 CREATE TABLE vps_product (
+  source_page varchar(255) NOT NULL DEFAULT 'https://stock.vpszdm.com/' COMMENT '库存来源页面',
   id bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `name` varchar(255) NOT NULL COMMENT '产品名称',
   `vendor_id` bigint NOT NULL COMMENT '商家ID',

@@ -10,46 +10,46 @@ import java.util.List;
 @Mapper
 public interface ProductMapper {
     @Select(
-            "<script>SELECT id, source_key, last_synced_at, `name`, `vendor_id`, `parent_id`,"
-                + " `group_flag`, `specification`, `route_tags`, `description`, `purchase_url`,"
-                + " `source_url`, `speed_url`, `looking_glass_url`, `review_url`, `stock_status`,"
-                + " `interval_seconds`, `last_checked_at`, `monitor_enabled`, `sort_order`,"
-                + " `enabled`, create_time, update_time FROM vps_product <where><if test='name !="
-                + " null and name != &quot;&quot;'>name LIKE CONCAT('%', #{name}, '%')</if></where>"
-                + " ORDER BY id</script>")
+            "<script>SELECT id, source_page, source_key, last_synced_at, `name`, `vendor_id`,"
+                + " `parent_id`, `group_flag`, `specification`, `route_tags`, `description`,"
+                + " `purchase_url`, `source_url`, `speed_url`, `looking_glass_url`, `review_url`,"
+                + " `stock_status`, `interval_seconds`, `last_checked_at`, `monitor_enabled`,"
+                + " `sort_order`, `enabled`, create_time, update_time FROM vps_product <where><if"
+                + " test='name != null and name != &quot;&quot;'>name LIKE CONCAT('%', #{name},"
+                + " '%')</if></where> ORDER BY id</script>")
     List<Product> selectList(@Param("name") String name);
 
     @Select(
-            "SELECT id, source_key, last_synced_at, `name`, `vendor_id`, `parent_id`, `group_flag`,"
-                    + " `specification`, `route_tags`, `description`, `purchase_url`, `source_url`,"
-                    + " `speed_url`, `looking_glass_url`, `review_url`, `stock_status`,"
-                    + " `interval_seconds`, `last_checked_at`, `monitor_enabled`, `sort_order`,"
-                    + " `enabled`, create_time, update_time FROM vps_product WHERE id = #{id}")
+            "SELECT id, source_page, source_key, last_synced_at, `name`, `vendor_id`, `parent_id`,"
+                + " `group_flag`, `specification`, `route_tags`, `description`, `purchase_url`,"
+                + " `source_url`, `speed_url`, `looking_glass_url`, `review_url`, `stock_status`,"
+                + " `interval_seconds`, `last_checked_at`, `monitor_enabled`, `sort_order`,"
+                + " `enabled`, create_time, update_time FROM vps_product WHERE id = #{id}")
     Product selectById(Long id);
 
     @Insert(
-            "INSERT INTO vps_product (source_key, `name`, `vendor_id`, `parent_id`, `group_flag`,"
-                + " `specification`, `route_tags`, `description`, `purchase_url`, `source_url`,"
-                + " `speed_url`, `looking_glass_url`, `review_url`, `stock_status`,"
+            "INSERT INTO vps_product (source_page, source_key, `name`, `vendor_id`, `parent_id`,"
+                + " `group_flag`, `specification`, `route_tags`, `description`, `purchase_url`,"
+                + " `source_url`, `speed_url`, `looking_glass_url`, `review_url`, `stock_status`,"
                 + " `interval_seconds`, `last_checked_at`, `monitor_enabled`, `sort_order`,"
-                + " `enabled`) VALUES (#{sourceKey}, #{name}, #{vendorId}, #{parentId},"
-                + " #{groupFlag}, #{specification}, #{routeTags}, #{description}, #{purchaseUrl},"
-                + " #{sourceUrl}, #{speedUrl}, #{lookingGlassUrl}, #{reviewUrl}, #{stockStatus},"
-                + " #{intervalSeconds}, #{lastCheckedAt}, #{monitorEnabled}, #{sortOrder},"
-                + " #{enabled})")
+                + " `enabled`) VALUES (#{sourcePage}, #{sourceKey}, #{name}, #{vendorId},"
+                + " #{parentId}, #{groupFlag}, #{specification}, #{routeTags}, #{description},"
+                + " #{purchaseUrl}, #{sourceUrl}, #{speedUrl}, #{lookingGlassUrl}, #{reviewUrl},"
+                + " #{stockStatus}, #{intervalSeconds}, #{lastCheckedAt}, #{monitorEnabled},"
+                + " #{sortOrder}, #{enabled})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Product item);
 
     @Update(
-            "UPDATE vps_product SET source_key=#{sourceKey}, `name` = #{name}, `vendor_id` ="
-                + " #{vendorId}, `parent_id` = #{parentId}, `group_flag` = #{groupFlag},"
-                + " `specification` = #{specification}, `route_tags` = #{routeTags}, `description`"
-                + " = #{description}, `purchase_url` = #{purchaseUrl}, `source_url` = #{sourceUrl},"
-                + " `speed_url` = #{speedUrl}, `looking_glass_url` = #{lookingGlassUrl},"
-                + " `review_url` = #{reviewUrl}, `stock_status` = #{stockStatus},"
-                + " `interval_seconds` = #{intervalSeconds}, `last_checked_at` = #{lastCheckedAt},"
-                + " `monitor_enabled` = #{monitorEnabled}, `sort_order` = #{sortOrder}, `enabled` ="
-                + " #{enabled}, update_time=NOW() WHERE id=#{id}")
+            "UPDATE vps_product SET source_page=#{sourcePage}, source_key=#{sourceKey}, `name` ="
+                + " #{name}, `vendor_id` = #{vendorId}, `parent_id` = #{parentId}, `group_flag` ="
+                + " #{groupFlag}, `specification` = #{specification}, `route_tags` = #{routeTags},"
+                + " `description` = #{description}, `purchase_url` = #{purchaseUrl}, `source_url` ="
+                + " #{sourceUrl}, `speed_url` = #{speedUrl}, `looking_glass_url` ="
+                + " #{lookingGlassUrl}, `review_url` = #{reviewUrl}, `stock_status` ="
+                + " #{stockStatus}, `interval_seconds` = #{intervalSeconds}, `last_checked_at` ="
+                + " #{lastCheckedAt}, `monitor_enabled` = #{monitorEnabled}, `sort_order` ="
+                + " #{sortOrder}, `enabled` = #{enabled}, update_time=NOW() WHERE id=#{id}")
     int update(Product item);
 
     @Delete("DELETE FROM vps_product WHERE id=#{id}")

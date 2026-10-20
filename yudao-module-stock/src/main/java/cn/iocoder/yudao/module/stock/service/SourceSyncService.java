@@ -79,17 +79,40 @@ public class SourceSyncService {
             if (due.isEmpty()) {
                 return 0;
             }
-            // 来源固定，禁止管理员输入任意抓取 URL，以免访问内网。
-            Map<String, SourceParser.Snapshot> states =
-                    parser.parse(
-                            Jsoup.connect("https://stock.vpszdm.com/")
-                                    .timeout(30000)
-                                    .maxBodySize(4 * 1024 * 1024)
-                                    .followRedirects(false)
-                                    .userAgent("VPS-Stock-Monitor/1.0")
-                                    .get());
+            // 仅抓取固定白名单页面；单个来源失败不阻断其他来源。
+            Map<String, Map<String, SourceParser.Snapshot>> byPage = new LinkedHashMap<>();
+            for (String page : due.stream().map(Product::getSourcePage).distinct().toList()) {
+                if (!SourceParser.PAGES.contains(page)) {
+                    continue;
+                }
+                try {
+                    byPage.put(
+                            page,
+                            parser.parsePage(
+                                    page,
+                                    Jsoup.connect(page)
+                                            .timeout(15000)
+                                            .maxBodySize(4 * 1024 * 1024)
+                                            .followRedirects(false)
+                                            .userAgent("VPS-Stock-Monitor/1.0")
+                                            .get()));
+                } catch (Exception e) {
+                    CheckLog log = new CheckLog();
+                    log.setName("来源同步失败");
+                    log.setMessage(page + " 抓取或解析失败，保留库存：" + e.getClass().getSimpleName());
+                    logs.insert(log);
+                    LOG.warn("来源同步失败 {}: {}", page, e.getClass().getSimpleName());
+                }
+            }
+            if (byPage.isEmpty()) {
+                throw new IllegalStateException("全部来源不可用");
+            }
             int count = 0;
             for (Product p : due) {
+                Map<String, SourceParser.Snapshot> states = byPage.get(p.getSourcePage());
+                if (states == null) {
+                    continue;
+                }
                 SourceParser.Snapshot state = states.get(p.getSourceKey());
                 if (state != null) {
                     if (changes.apply(p, state)) {

@@ -11,6 +11,12 @@ public final class StockValidation {
 
     public static void validate(Object item) {
         if (item instanceof Product p) {
+            if (p.getSourcePage() == null || p.getSourcePage().isBlank()) {
+                p.setSourcePage(SourceParser.MAIN_PAGE);
+            }
+            if (!SourceParser.PAGES.contains(p.getSourcePage())) {
+                throw new ServiceException(1_050_000_001, "请选择支持的库存来源页面");
+            }
             checkUrl(p.getPurchaseUrl());
             checkUrl(p.getSourceUrl());
             checkUrl(p.getSpeedUrl());

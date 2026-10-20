@@ -36,13 +36,13 @@ import { ref, reactive, computed, onMounted } from 'vue'
 const props=defineProps({title:String,resource:String,fields:Array,readonly:Boolean})
 const rows=ref([]),total=ref(0),loading=ref(false),saving=ref(false),syncing=ref(false),opened=ref(false),formRef=ref(),form=ref({})
 const query=reactive({name:'',pageNo:1,pageSize:20})
-const options=reactive({stockStatus:[{value:'IN_STOCK',label:'有货'},{value:'OUT_OF_STOCK',label:'无货'},{value:'UNKNOWN',label:'未知'}],type:['TELEGRAM','BARK','NTFY','WXPUSHER','WECHAT','DISCORD','OTHER'].map(value=>({value,label:value})),position:['HEADER','PRODUCT','FOOTER'].map(value=>({value,label:value})),status:['PENDING','ACTIVE','UNSUBSCRIBED'].map(value=>({value,label:value}))})
+const options=reactive({sourcePage:[{value:"https://stock.vpszdm.com/",label:"综合库存首页"},{value:"https://stock.bwh91.com/",label:"搬瓦工独立库存"},{value:"https://stock.dmitea.com/",label:"DMIT独立库存"},{value:"https://matrix.bwh91.com/",label:"搬瓦工产品大全"},{value:"https://matrix.dmitea.com/",label:"DMIT产品大全"}],stockStatus:[{value:'IN_STOCK',label:'有货'},{value:'OUT_OF_STOCK',label:'无货'},{value:'UNKNOWN',label:'未知'}],type:['TELEGRAM','BARK','NTFY','WXPUSHER','WECHAT','DISCORD','OTHER'].map(value=>({value,label:value})),position:['HEADER','PRODUCT','FOOTER'].map(value=>({value,label:value})),status:['PENDING','ACTIVE','UNSUBSCRIBED'].map(value=>({value,label:value}))})
 const visibleFields=computed(()=>props.fields.filter(f=>props.resource==='product'?['name','vendorId','stockStatus','intervalSeconds','lastCheckedAt','monitorEnabled','enabled'].includes(f.key):!['sourceName'].includes(f.key)))
 function display(f,v){ if(f.type==='datetime'&&v)return Array.isArray(v)?v.join('-'):new Date(v).toLocaleString('zh-CN',{hour12:false}); if(f.type==='bool')return v?'是':'否'; return options[f.key]?.find(o=>o.value===v)?.label ?? v ?? '—' }
 async function load(){ loading.value=true;try{const r=await request.get({url:'/stock/'+props.resource+'/page',params:query});rows.value=r.list;total.value=r.total}finally{loading.value=false} }
 function search(){query.pageNo=1;load()}
 async function edit(row){
-  form.value=row?{...row}:Object.fromEntries(props.fields.map(f=>[f.key,f.type==='bool'?['enabled'].includes(f.key):f.key==='intervalSeconds'?120:f.key==='sortOrder'?0:f.type==='number'?null:'']))
+  form.value=row?{...row}:Object.fromEntries(props.fields.map(f=>[f.key,f.key==='sourcePage'?'https://stock.vpszdm.com/':f.type==='bool'?['enabled'].includes(f.key):f.key==='intervalSeconds'?120:f.key==='sortOrder'?0:f.type==='number'?null:'']))
   if(!row&&props.resource==='product')form.value.stockStatus='UNKNOWN'
   for(const [field,resource] of [['vendorId','vendor'],['parentId','product'],['productId','product']]){
     if(props.fields.some(f=>f.key===field)){const r=await request.get({url:'/stock/'+resource+'/page',params:{pageNo:1,pageSize:1000}});options[field]=r.list.filter(p=>field!=='parentId'||p.groupFlag&&p.id!==row?.id).map(p=>({value:p.id,label:p.name+' (#'+p.id+')'}))}
