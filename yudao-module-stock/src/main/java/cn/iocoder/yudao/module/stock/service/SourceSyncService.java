@@ -50,7 +50,8 @@ public class SourceSyncService {
     public void scheduled() {
         try {
             long now = System.currentTimeMillis();
-            boolean fastOnly = now - lastFullRoundStartedAt < 120000;
+            // Allow sub-second scheduler jitter so the full round is not deferred one extra tick.
+            boolean fastOnly = now - lastFullRoundStartedAt < 119000;
             if (!fastOnly) lastFullRoundStartedAt = now;
             sync(false, fastOnly);
         } catch (Exception e) {
