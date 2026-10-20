@@ -44,6 +44,21 @@ DMIT、Vmiss、GoMami、Dedirock 的商家直连需要商家解除该服务器�
 - [WHMCS GetProducts（需商家 API 权限）](https://developers.whmcs.com/api-reference/getproducts/)
 - [GoMami API Token 文档](https://docs.gomami.io/account/api-token/)
 
+## 四家商家追加调查（2026-10-21）
+
+本轮检查官方文档、官网实际订单链接以及浏览器网络请求；未获得新的可验证库存响应，因此没有增加生产适配器或更改来源标签。以下结果是本次访问环境的观察，不代表接口永远不存在。
+
+| 商家 | 新核验入口 | 结果与下一步条件 |
+|---|---|---|
+| DMIT | https://docs.dmit.io/guide/getting-started 、 https://www.dmit.io/pages/pricing | 官方文档可读，目前导航主要为实例、SSH 密钥、账户和计费指南，未发现公开库存 API 文档；定价页浏览器请求仍为 Cloudflare 拦截页。需可访问的官方库存入口或商家授权。 |
+| Vmiss | https://www.vmiss.com/ 、 https://app.vmiss.com/ | 营销官网可读，观察到的请求未暴露库存 JSON；客户区仍显示浏览器验证。WordPress 内容接口不属于商品库存接口。 |
+| GoMami | https://docs.gomami.io/account/api-token/ → https://cp.gomami.io/account/api | 官方 API Reference 跳转登录；公开说明使用 Bearer Token，列出的能力为服务器、SSH、VNC、ISO 和任务管理。尚未证实在售产品或库存查询能力；不能仅凭存在 Token 就接入库存。 |
+| Dedirock | https://billing.dedirock.com/index.php/store/vps-storage/storage-starter | 官网实际链接发现 `/index.php/store/...` 订单入口，但浏览器访问仍为验证页；未取得当前目录产品与现有 PID 265、197、199 的可靠映射，不按相似名称替换。 |
+
+GoMami 的公开实例 API 示例包含 `/api/server/{id}/build/templates` 等已购服务器操作路径，未执行任何修改实例的请求。其文档说明 Token 具有完整账户权限；继续调查优先取得登录后的 API 文档或仅库存授权，而不是收集账户全权限 Token。
+
+WHMCS 官方 [GetProducts 文档](https://developers.whmcs.com/api-reference/getproducts/) 中的 `quantity_available` 从 8.12 加入，调用需要商家侧 API 凭据。通用文档不能证明某家已经开放该权限、使用相应版本或提供完整机房库存；在取得真实响应并核验枚举前，不实现猜测性判断。
+
 ## 部署与验证
 
 现有库先备份，执行 `sql/mysql/migrations/20261021_merchant_sources.sql` 一次，再替换服务 JAR。新库初始化使用已包含新字段的 `sql/mysql/vps.sql`，不要重复执行该迁移。Nginx 后台接口等待时间和管理端手动同步等待时间为 180 秒。
